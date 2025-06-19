@@ -1,22 +1,26 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import { STATUSES, PRIORITIES, LABELS } from '../lib/constants';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
+
+// Helper function to get random value from an array
+const getRandomValue = <T extends { value: string }>(arr: readonly T[]): string => {
+  return arr[Math.floor(Math.random() * arr.length)].value;
+};
 
 async function main() {
   // TODOS fake Data
-  await prisma.todo.createMany(
-    {
-      data: Array.from({length: 25}, () => (
-        {
-        title: faker.lorem.sentence(),
-        description: faker.lorem.sentence(),
-        // isDone: faker.datatype.boolean(),
-        // createdAt: faker.date.past(),
-      }
-    ))
-  }
-  )
+  await prisma.todo.createMany({
+    data: Array.from({ length: 25 }, () => ({
+      title: faker.lorem.sentence(),
+      description: faker.lorem.sentence(),
+      status: getRandomValue(STATUSES),
+      label: getRandomValue(LABELS),
+      priority: getRandomValue(PRIORITIES),
+      isDone: false,
+    }))
+  });
   
     // await prisma.user.createMany(
     //   {

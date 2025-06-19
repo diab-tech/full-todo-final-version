@@ -5,12 +5,17 @@ import { TodoFormValues } from '@/schema'
 const prisma = new PrismaClient()
 
 
-export const createTodoAction = async ({title,description,isDone}: TodoFormValues) => {
+export const createTodoAction = async ({title,description,isDone,priority,label,status}: TodoFormValues) => {
     return await prisma.todo.create({
         data: {
             title,
             description,
             isDone,
+            createdAt: new Date(),
+            priority,
+            label,
+            status,
+
             
             
         }
@@ -24,16 +29,19 @@ export const getTodoAction = async()=>{
 }
 
 
-export const updateTodoAction = async({title,description,isDone}: TodoFormValues)=>{
+export const updateTodoAction = async({title,description,isDone,priority,label,status}: TodoFormValues)=>{
     return await prisma.todo.update({
         where: {
             id: '1'
         },
         data: {
-            title: 'Updated Todo',
-            description: 'Updated Todo Description',
+            title,
+            description,
             isDone,
             createdAt: new Date(),
+            priority,
+            label,
+            status,
         }
     })
 }
