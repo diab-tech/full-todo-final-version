@@ -34,7 +34,7 @@ import { ITodo } from "@/interfaces";
 interface AddTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialValues?: Partial<TodoFormValues> & { id?: string };
+  initialValues?: ITodo;
   onSuccess?: () => void;
 }
 
@@ -52,7 +52,7 @@ export function AddTaskDialog({
       status: "Todo",
       priority: "Medium",
       label: "General",
-      ...initialValues
+      ...(initialValues || {})
     },
     mode: "onChange",
   });
@@ -60,21 +60,15 @@ export function AddTaskDialog({
   // Reset form when initialValues change
   React.useEffect(() => {
     if (initialValues) {
-      form.reset({
-        title: "",
-        description: "",
-        status: "Todo",
-        priority: "Medium",
-        label: "General",
-        ...initialValues
-      });
+      form.reset(initialValues);
     }
   }, [initialValues, form]);
 
-  const onSubmit = async (values: ITodo) => {
+  const onSubmit = async (values: TodoFormValues) => {
     try {
       if (initialValues?.id) {
-        await updateTodoAction(values);
+        // Include the id when updating
+        await updateTodoAction({ ...values, id: initialValues.id });
       } else {
         await createTodoAction(values);
       }

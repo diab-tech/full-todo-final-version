@@ -49,27 +49,34 @@ export const getTodoAction = async (): Promise<ITodo[]> => {
 
 
 export const updateTodoAction = async(todo:ITodo)=>{
-     await prisma.todo.update({
+    if (!todo.id) {
+        throw new Error('Cannot update todo: Missing todo ID');
+    }
+    
+    const updatedTodo = await prisma.todo.update({
         where: {
-            id:todo.id,
+            id: todo.id,
         },
         data: {
-            title:todo.title,
-            description:todo.description,
-            status:todo.status,
-            priority:todo.priority,
-            label:todo.label,
+            title: todo.title,
+            description: todo.description,
+            status: todo.status,
+            priority: todo.priority,
+            label: todo.label,
         }
-    })
+    });
+    
     revalidatePath('/');
+    return updatedTodo;
 }
 
 
 export const deleteTodoAction = async (id: string) => {
-     await prisma.todo.delete({
-      where: {
-        id,
-    },
-})
-revalidatePath('/');
+    const deletedTodo = await prisma.todo.delete({
+        where: {
+            id,
+        },
+    });
+    revalidatePath('/');
+    return deletedTodo.id;
 }

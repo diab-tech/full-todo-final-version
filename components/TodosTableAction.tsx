@@ -9,10 +9,24 @@ import { ITodo } from "@/interfaces";
 interface IProps {
   todo: ITodo;
   onEditClick: () => void;
+  onDeleteSuccess: () => void;
 }
 
-const TodosTableAction = ({ todo, onEditClick }: IProps) => {
+const TodosTableAction = ({ todo, onEditClick, onDeleteSuccess }: IProps) => {
   const [loading, setLoading] = useState(false);
+  
+  const handleDelete = async () => {
+    try {
+      setLoading(true);
+      await deleteTodoAction(todo.id as string);
+      // Call the success callback to refresh the todos
+      onDeleteSuccess();
+    } catch (error) {
+      console.error('Failed to delete todo:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   return (
     <>
@@ -21,17 +35,15 @@ const TodosTableAction = ({ todo, onEditClick }: IProps) => {
         size="sm"
         className="mr-2"
         onClick={onEditClick}
+        disabled={loading}
       >
         <Pen />
       </Button>
       <Button
         variant="destructive"
         size="sm"
-        onClick={async () => {
-          setLoading(true);
-          await deleteTodoAction(todo.id as string);
-          setLoading(false);
-        }}
+        onClick={handleDelete}
+        disabled={loading}
       >
         {loading ? <Spinner /> : <Trash />}
       </Button>

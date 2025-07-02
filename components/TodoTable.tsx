@@ -11,12 +11,18 @@ import { ITodo } from "@/interfaces";
 import { Badge } from "@/components/ui/badge";
 import TodosTableAction from "./TodosTableAction";
 
-  function TodoTable ({todos, onEditClick}: {todos: ITodo[], onEditClick: (todo: ITodo) => void}) {
-
-
-    if (!todos || !Array.isArray(todos)) {
-      return <div>No todos available.</div>; 
-    }
+function TodoTable({
+  todos,
+  onEditClick,
+  onDeleteSuccess,
+}: {
+  todos: ITodo[];
+  onEditClick: (todo: ITodo) => void;
+  onDeleteSuccess: () => void;
+}) {
+  if (!todos || !Array.isArray(todos)) {
+    return <div>No todos available.</div>;
+  }
   return (
     <Table>
       <TableCaption>A list of your recent TODOs.</TableCaption>
@@ -31,7 +37,10 @@ import TodosTableAction from "./TodosTableAction";
       <TableBody>
         {todos.map((todo: ITodo) => (
           <TableRow key={todo.id}>
-            <TableCell className="font-medium">{todo.title}</TableCell>
+            <TableCell className="font-medium ">
+              <Badge variant="outline" className="mr-3 w-16 text-xs">{todo.label}</Badge>
+              {todo.title}
+            </TableCell>
             <TableCell>
               {todo.status === "Todo" ? (
                 <Badge variant="default">{todo.status}</Badge>
@@ -56,6 +65,7 @@ import TodosTableAction from "./TodosTableAction";
               <TodosTableAction
                 todo={todo}
                 onEditClick={() => onEditClick(todo)}
+                onDeleteSuccess={onDeleteSuccess}
               />
             </TableCell>
           </TableRow>
@@ -63,6 +73,6 @@ import TodosTableAction from "./TodosTableAction";
       </TableBody>
     </Table>
   );
-};
+}
 
 export default TodoTable;
