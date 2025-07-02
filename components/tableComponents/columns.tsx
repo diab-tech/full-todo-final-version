@@ -11,12 +11,14 @@ import { STATUSES, PRIORITIES } from "@/lib/constants";
 // Extend TodoFormValues to include all required fields for table rows
 interface TodoRowData extends TodoFormValues {
   id: string;
+  title: string;
+  description?: string | null;
   status: string;
   label: string;
   priority: string;
-  createdAt: Date;
-  updatedAt?: Date; // Made optional with ?
-  isDone: boolean;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+
 }
 
 export const columns: Array<ColumnDef<TodoRowData>> = [

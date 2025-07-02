@@ -44,7 +44,7 @@ export default async function TaskPage() {
 
   return (
     <>
-      <div className="md:hidden">
+      <div className="">
         <Image
           src="/examples/tasks-light.png"
           width={1280}

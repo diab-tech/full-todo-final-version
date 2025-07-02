@@ -10,8 +10,8 @@ model Todo{
     id String @id @default(auto()) @map("_id") @db.ObjectId
     title String
     description String?
-    isDone Boolean @default(false)
-    createdAt DateTime @default(now())
+    createdAt DateTime? @default(now())
+    updatedAt DateTime? @default(now())
     priority String @default("Medium")
     label String @default("General")
     status String @default("Todo")
