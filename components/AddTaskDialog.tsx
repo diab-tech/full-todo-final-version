@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -38,22 +38,33 @@ interface AddTaskDialogProps {
   onSuccess?: () => void;
 }
 
-export function AddTaskDialog({ 
-  open, 
-  onOpenChange, 
-  initialValues, 
-  onSuccess 
+export function AddTaskDialog({
+  open,
+  onOpenChange,
+  initialValues,
+  onSuccess,
 }: AddTaskDialogProps) {
+  const defaultValues = {
+    title: "",
+    description: "",
+    status: "Todo" as const,
+    priority: "Medium" as const,
+    label: "General" as const,
+  } satisfies Partial<TodoFormValues>;
+
+  const formInitialValues = {
+    ...defaultValues,
+    ...(initialValues ? {
+      ...initialValues,
+      status: initialValues.status as "Todo" | "In Progress" | "Done",
+      priority: initialValues.priority as "High" | "Medium" | "Low",
+      label: initialValues.label as "General" | "Work" | "Personal" | "Documentation" | "Enhancement" | "Feature" | "Bug"
+    } : {})
+  };
+
   const form = useForm<TodoFormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      status: "Todo",
-      priority: "Medium",
-      label: "General",
-      ...(initialValues || {})
-    },
+    defaultValues: formInitialValues,
     mode: "onChange",
   });
 
@@ -72,19 +83,22 @@ export function AddTaskDialog({
       } else {
         await createTodoAction(values);
       }
-      
+
       form.reset({
         title: "",
         description: "",
-        status: "Todo",
-        priority: "Medium",
-        label: "General",
+        status: "Todo" as const,
+        priority: "Medium" as const,
+        label: "General" as const,
       });
-      
+
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error(`Failed to ${initialValues?.id ? 'update' : 'create'} todo:`, error);
+      console.error(
+        `Failed to ${initialValues?.id ? "update" : "create"} todo:`,
+        error
+      );
     }
   };
 
@@ -92,9 +106,13 @@ export function AddTaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{initialValues?.id ? 'Edit TODO' : 'Add TODO'}</DialogTitle>
+          <DialogTitle>
+            {initialValues?.id ? "Edit TODO" : "Add TODO"}
+          </DialogTitle>
           <DialogDescription>
-            {initialValues?.id ? 'Edit the TODO below.' : 'Create a new TODO item.'}
+            {initialValues?.id
+              ? "Edit the TODO below."
+              : "Create a new TODO item."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -192,15 +210,15 @@ export function AddTaskDialog({
               )}
             />
             <div className="flex justify-end gap-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
               </Button>
               <Button type="submit">
-                {initialValues?.id ? 'Update' : 'Create'}
+                {initialValues?.id ? "Update" : "Create"}
               </Button>
             </div>
           </form>

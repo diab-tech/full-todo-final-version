@@ -1,11 +1,24 @@
 import { getTodoAction } from "@/actions/todoActions";
 import TodoClient from "@/components/TodoClient";
+import { ITodo } from "@/interfaces";
 
 export default async function Home() {
-  const todos = await getTodoAction();
+  let todos: ITodo[] = [];
   
+  try {
+    todos = await getTodoAction();
+  } catch (error) {
+    console.error("Failed to fetch todos:", error);
+    // In a real app, you might want to handle this error more gracefully
+    return (
+      <div className="container mx-auto py-10">
+        <div className="text-red-500">Failed to load todos. Please try again later.</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16  font-[family-name:var(--font-geist-sans)]">
+    <div className="container mx-auto py-10">
       <TodoClient initialTodos={todos} />
     </div>
   );

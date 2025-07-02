@@ -1,14 +1,14 @@
-export type Status = "Todo" | "In Progress" | "Done";
-export type Priority = "High" | "Medium" | "Low";
-export type Label = "General" | "Work" | "Personal";
+export type Status = "Todo" | "In Progress" | "Done" | string;
+export type Priority = "High" | "Medium" | "Low" | string;
+export type Label = "General" | "Work" | "Personal" | string;
 
 export interface ITodo {
-    id?: string;
+    id: string;
     title: string;
-    description?: string;
+    description: string | null;
     priority: Priority;
     label: Label;
     status: Status;
-    createdAt?: Date | null;
-    updatedAt?: Date | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
 }

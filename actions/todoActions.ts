@@ -33,14 +33,14 @@ export const getTodoAction = async (): Promise<ITodo[]> => {
         // Type assertion for status, priority, and label to match ITodo
         const status = todo.status as 'Todo' | 'In Progress' | 'Done';
         const priority = todo.priority as 'High' | 'Medium' | 'Low';
-        const label = todo.label as 'General' | 'Work' | 'Personal';
+        const label = todo.label as 'General' | 'Work' | 'Personal' | 'Documentation' | 'Enhancement' | 'Feature' | 'Bug';
         
         return {
             ...todo,
             status,
             priority,
             label,
-            description: todo.description || undefined,
+            description: todo.description || null,
             createdAt: todo.createdAt ? new Date(todo.createdAt) : new Date(),
             updatedAt: todo.updatedAt ? new Date(todo.updatedAt) : null
         };
