@@ -30,6 +30,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   onEdit: (todo: TData) => void;
   onDeleteSuccess: (id: string) => void;
+  deletingId: string | null;
 }
 
 export function DataTable<TData, TValue>({
@@ -37,6 +38,7 @@ export function DataTable<TData, TValue>({
   data,
   onEdit,
   onDeleteSuccess,
+  deletingId,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -49,6 +51,7 @@ export function DataTable<TData, TValue>({
     meta: {
       onEdit,
       onDeleteSuccess,
+      deletingId,
     },
     state: {
       sorting,
@@ -70,13 +73,19 @@ export function DataTable<TData, TValue>({
     <div className="space-y-4">
       <DataTableToolbar table={table} />
       <div className="rounded-md border">
-        <Table>
+        <Table className="table-fixed w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead 
+                      key={header.id}
+                      className={
+                        // @ts-expect-error - meta exists on columnDef
+                        header.column.columnDef.meta?.className || ''
+                      }
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -97,7 +106,13 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell 
+                      key={cell.id}
+                      className={
+                        // @ts-expect-error - meta exists on columnDef
+                        cell.column.columnDef.meta?.className || ''
+                      }
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

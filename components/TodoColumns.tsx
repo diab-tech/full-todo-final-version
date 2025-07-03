@@ -8,6 +8,9 @@ export const columns: ColumnDef<ITodo>[] = [
     accessorKey: "title",
     header: "Title",
     cell: ({ row }) => row.getValue("title"),
+    meta: {
+      className: "w-full min-w-[200px]",
+    },
   },
   {
     accessorKey: "label",
@@ -19,6 +22,9 @@ export const columns: ColumnDef<ITodo>[] = [
     ),
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
+    },
+    meta: {
+      className: "w-[100px] text-center",
     },
   },
   {
@@ -43,6 +49,9 @@ export const columns: ColumnDef<ITodo>[] = [
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
     },
+    meta: {
+      className: "w-[100px] text-center",
+    },
   },
   {
     accessorKey: "priority",
@@ -66,6 +75,9 @@ export const columns: ColumnDef<ITodo>[] = [
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
     },
+    meta: {
+      className: "w-[100px] text-center",
+    },
   },
   {
     id: "actions",
@@ -77,12 +89,19 @@ export const columns: ColumnDef<ITodo>[] = [
             // @ts-ignore
             table.options.meta?.onEdit(row.original);
           }}
-          onDeleteSuccess={() => {
-            // @ts-ignore
-            table.options.meta?.onDeleteSuccess();
+          onDeleteSuccess={(id: string) => {
+            // @ts-expect-error
+            table.options.meta?.onDeleteSuccess(id);
           }}
+          isDeleting={
+            // @ts-expect-error
+            table.options.meta?.deletingId === row.original.id
+          }
         />
       </div>
     ),
+    meta: {
+      className: "w-[100px] text-right",
+    },
   },
 ];

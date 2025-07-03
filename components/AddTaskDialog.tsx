@@ -159,6 +159,7 @@ export function AddTaskDialog({
                       <SelectItem value="Todo">Todo</SelectItem>
                       <SelectItem value="In Progress">In Progress</SelectItem>
                       <SelectItem value="Done">Done</SelectItem>
+                      <SelectItem value="Canceled">Canceled</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -203,6 +204,10 @@ export function AddTaskDialog({
                       <SelectItem value="General">General</SelectItem>
                       <SelectItem value="Work">Work</SelectItem>
                       <SelectItem value="Personal">Personal</SelectItem>
+                      <SelectItem value="Documentation">Documentation</SelectItem>
+                      <SelectItem value="Enhancement">Enhancement</SelectItem>
+                      <SelectItem value="Feature">Feature</SelectItem>
+                      <SelectItem value="Bug">Bug</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

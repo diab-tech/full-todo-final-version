@@ -21,6 +21,7 @@ export default function TodoClient({ initialTodos }: { initialTodos: ITodo[] }) 
     updatedAt: new Date(),
     id: ""
   });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const refreshTodos = useCallback(async () => {
@@ -37,7 +38,7 @@ export default function TodoClient({ initialTodos }: { initialTodos: ITodo[] }) 
     }
   }, [toast]);
 
-  const handleEdit = useCallback((todo: ITodo) => {
+   const handleEdit = useCallback((todo: ITodo) => {
     setEditingTodo({
       ...todo,
       description: todo.description || "",
@@ -48,6 +49,7 @@ export default function TodoClient({ initialTodos }: { initialTodos: ITodo[] }) 
 
   const handleDelete = useCallback(async (id: string) => {
     try {
+      setDeletingId(id);
       await deleteTodoAction(id);
       setTodos(prev => prev.filter(todo => todo.id !== id));
       toast({
@@ -61,6 +63,8 @@ export default function TodoClient({ initialTodos }: { initialTodos: ITodo[] }) 
         description: "Failed to delete todo",
         variant: "destructive",
       });
+    } finally {
+      setDeletingId(null);
     }
   }, [toast]);
 
@@ -99,6 +103,7 @@ export default function TodoClient({ initialTodos }: { initialTodos: ITodo[] }) 
         data={todos}
         onEdit={handleEdit}
         onDeleteSuccess={handleDelete}
+        deletingId={deletingId}
       />
       
       <AddTaskDialog

@@ -1,53 +1,51 @@
 "use client";
 import { Pen, Trash } from "lucide-react";
 import { Button } from "./ui/button";
-import { deleteTodoAction } from "@/actions/todoActions";
 import Spinner from "./Spinner";
-import { useState } from "react";
 import { ITodo } from "@/interfaces";
 
 interface IProps {
   todo: ITodo;
   onEditClick: () => void;
-  onDeleteSuccess: () => void;
+  onDeleteSuccess: (id: string) => void;
+  isDeleting?: boolean;
 }
 
-const TodosTableAction = ({ todo, onEditClick, onDeleteSuccess }: IProps) => {
-  const [loading, setLoading] = useState(false);
+const TodosTableAction = ({ todo, onEditClick, onDeleteSuccess, isDeleting = false }: IProps) => {
   
   const handleDelete = async () => {
     try {
-      setLoading(true);
-      await deleteTodoAction(todo.id as string);
-      // Call the success callback to refresh the todos
-      onDeleteSuccess();
+      onDeleteSuccess(todo.id as string);
     } catch (error) {
       console.error('Failed to delete todo:', error);
-    } finally {
-      setLoading(false);
     }
   };
   
   return (
-    <>
+    <div className="flex items-center">
       <Button
         variant="ghost"
         size="sm"
-        className="mr-2"
+        className="h-8 w-8 p-0 hover:bg-transparent"
         onClick={onEditClick}
-        disabled={loading}
+        disabled={isDeleting}
       >
-        <Pen />
+        <Pen className="h-4 w-4" />
       </Button>
       <Button
-        variant="destructive"
+        variant="ghost"
         size="sm"
+        className="h-8 w-8 p-0 text-destructive hover:bg-transparent hover:text-destructive/80"
         onClick={handleDelete}
-        disabled={loading}
+        disabled={isDeleting}
       >
-        {loading ? <Spinner /> : <Trash />}
+        {isDeleting ? (
+          <Spinner />
+        ) : (
+          <Trash className="h-4 w-4" />
+        )}
       </Button>
-    </>
+    </div>
   );
 };
 
