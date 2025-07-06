@@ -120,3 +120,8 @@
     @apply bg-background text-foreground;
   }
 }
+[data-theme] .cl-userButtonBox:focus,
+[data-theme] .cl-userButtonOuterIdentifier:focus {
+  border-radius: 8px !important;
+  box-shadow: 0 0 0 3px var(--ring) !important; /* استخدام var(--ring) عشان يتغير حسب الـ theme */
+}

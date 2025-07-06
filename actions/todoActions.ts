@@ -8,22 +8,40 @@ import { ITodo } from '@/interfaces';
 const prisma = new PrismaClient()
 
 
-export const createTodoAction = async ({title,description,status,priority,label}: TodoFormValues) => {
-     await prisma.todo.create({
-        data: {
-            title,
-            description,
-            status,
-            priority,
-            label,
+export const createTodoAction = async ({title, description, status, priority, label, user_id}: TodoFormValues) => {
+    try {
+        console.log('Creating todo with data:', { title, user_id });
+        
+        if (!user_id) {
+            throw new Error('User ID is required to create a todo');
         }
-    })
-    revalidatePath('/');
+
+        const newTodo = await prisma.todo.create({
+            data: {
+                title,
+                description: description || null,
+                status,
+                priority,
+                label,
+                user_id
+            }
+        });
+        
+        console.log('Successfully created todo:', newTodo.id);
+        revalidatePath('/');
+        return newTodo;
+    } catch (error) {
+        console.error('Error creating todo:', error);
+        throw new Error(`Failed to create todo: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 }
 
 
-export const getTodoAction = async (): Promise<ITodo[]> => {
+export const getTodoAction = async (userId: string): Promise<ITodo[]> => {
     const todos = await prisma.todo.findMany({
+        where: {
+            user_id: userId
+        },
         orderBy: {
             createdAt: 'desc'
         }
@@ -48,26 +66,44 @@ export const getTodoAction = async (): Promise<ITodo[]> => {
 }
 
 
-export const updateTodoAction = async(todo:ITodo)=>{
+interface UpdateTodoData {
+    id: string;
+    title: string;
+    description?: string | null;
+    status: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
+    priority: 'High' | 'Medium' | 'Low';
+    label: 'General' | 'Work' | 'Personal' | 'Documentation' | 'Enhancement' | 'Feature' | 'Bug';
+    user_id?: string;
+    createdAt?: Date | null;
+    updatedAt?: Date | null;
+}
+
+export const updateTodoAction = async(todo: UpdateTodoData) => {
     if (!todo.id) {
         throw new Error('Cannot update todo: Missing todo ID');
     }
     
-    const updatedTodo = await prisma.todo.update({
-        where: {
-            id: todo.id,
-        },
-        data: {
-            title: todo.title,
-            description: todo.description,
-            status: todo.status,
-            priority: todo.priority,
-            label: todo.label,
-        }
-    });
+    const { id, ...updateData } = todo;
     
-    revalidatePath('/');
-    return updatedTodo;
+    try {
+        const updatedTodo = await prisma.todo.update({
+            where: { id },
+            data: {
+                title: updateData.title,
+                description: updateData.description ?? null,
+                status: updateData.status,
+                priority: updateData.priority,
+                label: updateData.label,
+                ...(updateData.user_id ? { user_id: updateData.user_id } : {})
+            }
+        });
+        
+        revalidatePath('/');
+        return updatedTodo;
+    } catch (error) {
+        console.error('Error updating todo:', error);
+        throw error;
+    }
 }
 
 

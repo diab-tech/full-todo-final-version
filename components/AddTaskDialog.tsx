@@ -30,12 +30,14 @@ import {
 } from "@/components/ui/select";
 import * as React from "react";
 import { ITodo } from "@/interfaces";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AddTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialValues?: ITodo;
   onSuccess?: () => void;
+  userId: string | null; // تأكيد إن userId ممكن يكون null
 }
 
 export function AddTaskDialog({
@@ -43,58 +45,110 @@ export function AddTaskDialog({
   onOpenChange,
   initialValues,
   onSuccess,
+  userId,
 }: AddTaskDialogProps) {
-  const defaultValues = {
+  const { toast } = useToast();
+
+  // Define default values with a fallback for userId
+  const defaultValues: TodoFormValues = {
     title: "",
     description: "",
-    status: "Todo" as const,
-    priority: "Medium" as const,
-    label: "General" as const,
-  } satisfies Partial<TodoFormValues>;
-
-  const formInitialValues = {
-    ...defaultValues,
-    ...(initialValues ? {
-      ...initialValues,
-      status: initialValues.status as "Todo" | "In Progress" | "Done",
-      priority: initialValues.priority as "High" | "Medium" | "Low",
-      label: initialValues.label as "General" | "Work" | "Personal" | "Documentation" | "Enhancement" | "Feature" | "Bug"
-    } : {})
+    status: "Todo",
+    priority: "Medium",
+    label: "General",
+    user_id: userId || "", // Will be validated by the form schema
   };
 
+  // Initialize form with default values
   const form = useForm<TodoFormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: formInitialValues,
+    defaultValues: {
+      ...defaultValues,
+      ...(initialValues
+        ? {
+            ...initialValues,
+            status: initialValues.status as "Todo" | "In Progress" | "Done" | "Canceled",
+            priority: initialValues.priority as "High" | "Medium" | "Low",
+            label: initialValues.label as
+              | "General"
+              | "Work"
+              | "Personal"
+              | "Documentation"
+              | "Enhancement"
+              | "Feature"
+              | "Bug",
+            user_id: userId || "", // Ensure user_id is always a string
+          }
+        : {}),
+    },
     mode: "onChange",
   });
 
   // Reset form when initialValues change
   React.useEffect(() => {
     if (initialValues) {
-      form.reset(initialValues);
+      form.reset({
+        ...initialValues,
+        user_id: userId || "", // Ensure user_id is always a string
+        status: initialValues.status as "Todo" | "In Progress" | "Done" | "Canceled",
+        priority: initialValues.priority as "High" | "Medium" | "Low",
+        label: initialValues.label as
+          | "General"
+          | "Work"
+          | "Personal"
+          | "Documentation"
+          | "Enhancement"
+          | "Feature"
+          | "Bug",
+      });
     }
-  }, [initialValues, form]);
+  }, [initialValues, form, userId]);
 
-  const onSubmit = async (values: TodoFormValues) => {
+  const onSubmit = async (data: TodoFormValues) => {
     try {
+      // Ensure user_id is always a string
+      const validatedUserId = userId || "";
+      
       if (initialValues?.id) {
-        // Include the id when updating
-        await updateTodoAction({ ...values, id: initialValues.id });
+        // Update existing todo
+        const updatedTodo = {
+          ...data,
+          id: initialValues.id,
+          user_id: validatedUserId, // Use validated user_id
+        };
+        await updateTodoAction(updatedTodo);
+        toast({
+          title: "Success",
+          description: "Task updated successfully",
+        });
       } else {
-        await createTodoAction(values);
+        // Create new todo
+        await createTodoAction({
+          ...data,
+          user_id: validatedUserId, // Use validated user_id
+        });
+        toast({
+          title: "Success",
+          description: "Task created successfully",
+        });
       }
-
       form.reset({
         title: "",
         description: "",
-        status: "Todo" as const,
-        priority: "Medium" as const,
-        label: "General" as const,
+        status: "Todo",
+        priority: "Medium",
+        label: "General",
+        user_id: validatedUserId,
       });
-
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
+      console.error("Error saving task:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save task. Please try again.",
+        variant: "destructive",
+      });
       console.error(
         `Failed to ${initialValues?.id ? "update" : "create"} todo:`,
         error
@@ -102,17 +156,36 @@ export function AddTaskDialog({
     }
   };
 
+  // Handle case where userId is not provided
+  if (!userId) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Error</DialogTitle>
+            <DialogDescription>User ID is required to add or edit a TODO.</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {initialValues?.id ? "Edit TODO" : "Add TODO"}
+            {initialValues ? "Edit Task" : "Add New Task"}
           </DialogTitle>
           <DialogDescription>
-            {initialValues?.id
-              ? "Edit the TODO below."
-              : "Create a new TODO item."}
+            {initialValues
+              ? "Update the task details below."
+              : "Fill in the details below to create a new task."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -137,7 +210,14 @@ export function AddTaskDialog({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter description" {...field} />
+                    <Input 
+                      placeholder="Enter description" 
+                      value={field.value || ''} 
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -222,9 +302,7 @@ export function AddTaskDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit">
-                {initialValues?.id ? "Update" : "Create"}
-              </Button>
+              <Button type="submit">{initialValues?.id ? "Update" : "Create"}</Button>
             </div>
           </form>
         </Form>

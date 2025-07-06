@@ -9,9 +9,10 @@ interface IProps {
   onEditClick: () => void;
   onDeleteSuccess: (id: string) => void;
   isDeleting?: boolean;
+  disabled?: boolean;
 }
 
-const TodosTableAction = ({ todo, onEditClick, onDeleteSuccess, isDeleting = false }: IProps) => {
+const TodosTableAction = ({ todo, onEditClick, onDeleteSuccess, isDeleting = false, disabled = false }: IProps) => {
   
   const handleDelete = async () => {
     try {
@@ -28,7 +29,9 @@ const TodosTableAction = ({ todo, onEditClick, onDeleteSuccess, isDeleting = fal
         size="sm"
         className="h-8 w-8 p-0 hover:bg-transparent"
         onClick={onEditClick}
-        disabled={isDeleting}
+        disabled={disabled || isDeleting}
+        aria-disabled={disabled || isDeleting}
+        data-disabled={disabled || isDeleting}
       >
         <Pen className="h-4 w-4" />
       </Button>
@@ -37,7 +40,9 @@ const TodosTableAction = ({ todo, onEditClick, onDeleteSuccess, isDeleting = fal
         size="sm"
         className="h-8 w-8 p-0 text-destructive hover:bg-transparent hover:text-destructive/80"
         onClick={handleDelete}
-        disabled={isDeleting}
+        disabled={disabled || isDeleting}
+        aria-disabled={disabled || isDeleting}
+        data-disabled={disabled || isDeleting}
       >
         {isDeleting ? (
           <Spinner />

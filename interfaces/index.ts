@@ -1,6 +1,6 @@
-export type Status = "Todo" | "In Progress" | "Done" | "Canceled" | string;
-export type Priority = "High" | "Medium" | "Low" | string;
-export type Label = "General" | "Work" | "Personal" | "Documentation" | "Enhancement" | "Feature" | "Bug" | string;
+export type Status = "Todo" | "In Progress" | "Done" | "Canceled";
+export type Priority = "High" | "Medium" | "Low";
+export type Label = "General" | "Work" | "Personal" | "Documentation" | "Enhancement" | "Feature" | "Bug";
 
 export interface ITodo {
     id: string;
@@ -9,6 +9,7 @@ export interface ITodo {
     priority: Priority;
     label: Label;
     status: Status;
+    user_id: string;
     createdAt: Date | null;
     updatedAt: Date | null;
 }
