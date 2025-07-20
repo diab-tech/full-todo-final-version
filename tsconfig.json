@@ -34,7 +34,7 @@
     ".next/types/**/*.ts",
     "next-env.d.ts",
     "./.next/types/**/*.ts"
-  ],
+, "vitest.config.mts"  ],
   "exclude": [
     "node_modules"
   ]

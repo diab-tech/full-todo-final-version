@@ -1,14 +1,14 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+} from "./ui/dialog";
+import { Input } from "./ui/input";
 import {
   Form,
   FormControl,
@@ -16,21 +16,26 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from "./ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormSchema, TodoFormValues } from "@/schema";
-import { createTodoAction, updateTodoAction } from "@/actions/todoActions";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "./ui/select";
 import * as React from "react";
 import { ITodo } from "@/interfaces";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "./ui/use-toast";
+import Spinner from "./Spinner";
+import { Status, Priority, Label } from "@/interfaces";
+import { useUpdateTodo } from "@/app/hooks/useUpdateTodo";
+import { useCreateTodo } from "@/app/hooks/useCreateTodo";
+
+import { Button } from "./ui/button";
 
 interface AddTaskDialogProps {
   open: boolean;
@@ -48,6 +53,9 @@ export function AddTaskDialog({
   userId,
 }: AddTaskDialogProps) {
   const { toast } = useToast();
+  const updateTodo = useUpdateTodo();
+  const createTodo = useCreateTodo();
+
 
   // Define default values with a fallback for userId
   const defaultValues: TodoFormValues = {
@@ -67,16 +75,9 @@ export function AddTaskDialog({
       ...(initialValues
         ? {
             ...initialValues,
-            status: initialValues.status as "Todo" | "In Progress" | "Done" | "Canceled",
-            priority: initialValues.priority as "High" | "Medium" | "Low",
-            label: initialValues.label as
-              | "General"
-              | "Work"
-              | "Personal"
-              | "Documentation"
-              | "Enhancement"
-              | "Feature"
-              | "Bug",
+            status: initialValues.status as Status,
+            priority: initialValues.priority as Priority,
+            label: initialValues.label as Label,
             user_id: userId || "", // Ensure user_id is always a string
           }
         : {}),
@@ -90,21 +91,15 @@ export function AddTaskDialog({
       form.reset({
         ...initialValues,
         user_id: userId || "", // Ensure user_id is always a string
-        status: initialValues.status as "Todo" | "In Progress" | "Done" | "Canceled",
-        priority: initialValues.priority as "High" | "Medium" | "Low",
-        label: initialValues.label as
-          | "General"
-          | "Work"
-          | "Personal"
-          | "Documentation"
-          | "Enhancement"
-          | "Feature"
-          | "Bug",
+        status: initialValues.status as Status,
+        priority: initialValues.priority as Priority,
+        label: initialValues.label as Label,
       });
     }
   }, [initialValues, form, userId]);
 
   const onSubmit = async (data: TodoFormValues) => {
+    onOpenChange(false);
     try {
       // Ensure user_id is always a string
       const validatedUserId = userId || "";
@@ -116,21 +111,19 @@ export function AddTaskDialog({
           id: initialValues.id,
           user_id: validatedUserId, // Use validated user_id
         };
-        await updateTodoAction(updatedTodo);
+        await updateTodo.mutateAsync(updatedTodo);
         toast({
           title: "Success",
           description: "Task updated successfully",
         });
       } else {
-        // Create new todo
-        await createTodoAction({
+        const todoData = {
           ...data,
-          user_id: validatedUserId, // Use validated user_id
-        });
-        toast({
-          title: "Success",
-          description: "Task created successfully",
-        });
+          user_id: validatedUserId,
+          description: data.description || null // This ensures description is either string or null
+        };
+        // Create new todo using the mutation
+        await createTodo.mutateAsync(todoData);
       }
       form.reset({
         title: "",
@@ -140,15 +133,20 @@ export function AddTaskDialog({
         label: "General",
         user_id: validatedUserId,
       });
-      onOpenChange(false);
+      
       onSuccess?.();
     } catch (error) {
+      
+      onOpenChange(true);
       console.error("Error saving task:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save task. Please try again.",
-        variant: "destructive",
-      });
+      if (error instanceof Error) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to save task.",
+          variant: "destructive",
+        });
+      }
+      
       console.error(
         `Failed to ${initialValues?.id ? "update" : "create"} todo:`,
         error
@@ -211,12 +209,9 @@ export function AddTaskDialog({
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Enter description" 
+                      placeholder="Enter description"
+                      {...field}
                       value={field.value || ''} 
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
                     />
                   </FormControl>
                   <FormMessage />
@@ -302,7 +297,9 @@ export function AddTaskDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit">{initialValues?.id ? "Update" : "Create"}</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? <Spinner /> : initialValues?.id ? "Update" : "Create"}
+              </Button>
             </div>
           </form>
         </Form>

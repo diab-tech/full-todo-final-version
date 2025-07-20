@@ -5,11 +5,14 @@ import { AddTaskDialog } from "@/components/AddTaskDialog";
 import { DataTable } from "@/components/DataTable";
 import { getColumns } from "@/components/TodoColumns";
 import { ITodo } from "@/interfaces";
-import { deleteTodoAction, getTodoAction } from "@/actions/todoActions";
+import { getUserTodoAction } from "@/actions/todoActions";
+import { useDeleteTodo } from "@/app/hooks/useDeleteTodo";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Plus } from "lucide-react";
 
 interface TodoClientProps {
   initialTodos: ITodo[];
@@ -17,7 +20,7 @@ interface TodoClientProps {
 }
 
 export default function TodoClient({ initialTodos, userId }: TodoClientProps) {
-  const [todos, setTodos] = useState<ITodo[]>(initialTodos);
+  // const [todos, setTodos] = useState<ITodo[]>(initialTodos);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [showCompleted, setShowCompleted] = useState<boolean>(true);
@@ -27,10 +30,20 @@ export default function TodoClient({ initialTodos, userId }: TodoClientProps) {
 
   const { toast } = useToast();
 
+  // const [pageIndex, setPageIndex] = useState(0);
+
+  const { data: todos, isFetching } = useQuery({
+    queryKey: ["todos", userId],
+    queryFn: () => getUserTodoAction(userId),
+    initialData: initialTodos,
+    keepPreviousData: true,
+  });
+
+  const queryClient = useQueryClient();
+
   const refreshTodos = useCallback(async () => {
     try {
-      const updatedTodos = await getTodoAction(userId);
-      setTodos(updatedTodos);
+      await queryClient.invalidateQueries({ queryKey: ["todos", userId] });
       setSelectedRows(new Set()); // Clear selection on refresh
     } catch (error) {
       console.error("Failed to refresh todos:", error);
@@ -40,37 +53,35 @@ export default function TodoClient({ initialTodos, userId }: TodoClientProps) {
         variant: "destructive",
       });
     }
-  }, [userId, toast]);
+  }, [userId, toast, queryClient]);
 
   // Status toggle is now handled in the TodoColumns component
 
-  const handleDelete = useCallback(async (id: string) => {
-    try {
-      setDeletingIds(prev => new Set([...prev, id]));
-      await deleteTodoAction(id);
-      await refreshTodos();
-      toast({
-        title: "Todo deleted",
-        variant: "default",
-      });
-    } catch (error) {
-      console.error('Failed to delete todo:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete todo",
-        variant: "destructive",
-      });
-    } finally {
-      setDeletingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
-    }
-  }, [refreshTodos, toast]);
+  const deleteTodo = useDeleteTodo();
+
+  const [pageIndex, setPageIndex] = useState(0);
+
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        setDeletingIds((prev) => new Set([...prev, id]));
+        await deleteTodo.mutateAsync(id);
+        // The mutation will automatically invalidate the todos query
+      } catch (error) {
+        console.error("Failed to delete todo:", error);
+      } finally {
+        setDeletingIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
+      }
+    },
+    [deleteTodo]
+  );
 
   const toggleRowSelection = useCallback((id: string) => {
-    setSelectedRows(prev => {
+    setSelectedRows((prev) => {
       const newSelection = new Set(prev);
       if (newSelection.has(id)) {
         newSelection.delete(id);
@@ -86,33 +97,24 @@ export default function TodoClient({ initialTodos, userId }: TodoClientProps) {
   const handleBulkDelete = useCallback(async () => {
     try {
       const idsToDelete = Array.from(selectedRows);
-      setDeletingIds(prev => new Set([...prev, ...idsToDelete]));
+      setDeletingIds((prev) => new Set([...prev, ...idsToDelete]));
+
+      await Promise.all(idsToDelete.map((id) => deleteTodo.mutateAsync(id)));
       
-      await Promise.all(idsToDelete.map(id => deleteTodoAction(id)));
-      
-      await refreshTodos();
       setSelectedRows(new Set());
-      
-      toast({
-        title: `${idsToDelete.length} ${idsToDelete.length === 1 ? 'todo' : 'todos'} deleted`,
-        variant: "default",
-      });
     } catch (error) {
-      console.error('Failed to delete todos:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete todos",
-        variant: "destructive",
-      });
+      console.error("Failed to delete todos:", error);
     } finally {
       setDeletingIds(new Set());
     }
-  }, [selectedRows, refreshTodos, toast]);
+  }, [selectedRows, deleteTodo]);
 
   // Edit functionality is now handled in the handleEditClick function
 
   const filteredTodos = useMemo(() => {
-    return showCompleted ? todos : todos.filter(todo => todo.status !== 'Done');
+    return showCompleted
+      ? todos
+      : todos.filter((todo) => todo.status !== "Done");
   }, [todos, showCompleted]);
 
   const handleEditTodo = useCallback((todo: ITodo) => {
@@ -120,17 +122,29 @@ export default function TodoClient({ initialTodos, userId }: TodoClientProps) {
     setIsDialogOpen(true);
   }, []);
 
-  const handleDeleteTodo = useCallback((id: string) => {
-    handleDelete(id);
-  }, [handleDelete]);
+  const handleAddTodo = useCallback(() => {
+    setEditingTodo(null);
+    setIsDialogOpen(true);
+  }, []);
+
+  const handleDeleteTodo = useCallback(
+    (id: string) => {
+      handleDelete(id);
+    },
+    [handleDelete]
+  );
 
   // Set up the columns with proper typing
-  const columns = useMemo<ColumnDef<ITodo>[]>(() => getColumns({
-    onUpdateSuccess: refreshTodos,
-    showDateTime,
-    onEdit: handleEditTodo,
-    onDelete: handleDeleteTodo,
-  }), [refreshTodos, showDateTime, handleEditTodo, handleDeleteTodo]);
+  const columns = useMemo<ColumnDef<ITodo>[]>(
+    () =>
+      getColumns({
+        onUpdateSuccess: refreshTodos,
+        showDateTime,
+        onEdit: handleEditTodo,
+        onDelete: handleDeleteTodo,
+      }),
+    [refreshTodos, showDateTime, handleEditTodo, handleDeleteTodo]
+  );
 
   return (
     <div className="container mx-auto py-10">
@@ -201,15 +215,31 @@ export default function TodoClient({ initialTodos, userId }: TodoClientProps) {
           meta={{
             onEdit: handleEditTodo,
             onDeleteSuccess: handleDelete,
-            deletingId: Array.from(deletingIds)[0],
+            deletingId: deletingIds.size > 0 ? Array.from(deletingIds)[0] : undefined,
             selectedRows,
             onToggleSelect: toggleRowSelection,
             showDateTime,
             onToggleDateTime: () => setShowDateTime(!showDateTime),
           }}
+          pageIndex={pageIndex}
+          onPageChange={setPageIndex}
+          addButton={
+            <Button 
+              onClick={handleAddTodo} 
+              className="w-full sm:w-auto"
+              disabled={isFetching}
+            >
+              {isFetching ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="mr-2 h-4 w-4" />
+              )}
+              Add Task
+            </Button>
+          }
           className={cn(
             "transition-opacity",
-            deletingIds.size > 0 && "opacity-70 pointer-events-none"
+            isFetching && "opacity-70 pointer-events-none"
           )}
         />
       </div>

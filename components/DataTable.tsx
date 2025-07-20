@@ -43,30 +43,34 @@ export interface DataTableProps<TData, TValue> {
   meta?: DataTableMeta<TData>;
   addButton?: React.ReactNode;
   className?: string;
+  pageIndex?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function DataTable<TData extends { id: string }, TValue>({
   columns,
   data,
   meta = {},
-  addButton,
+  pageIndex = 0,
+  onPageChange = () => {},
   className,
+  addButton,
 }: DataTableProps<TData, TValue>) {
   const { 
     onEdit, 
     onDeleteSuccess, 
-    deletingId, 
-    selectedRows = new Set<string>(), 
+    deletingId,
+    selectedRows = new Set<string>(),
     onToggleSelect,
     showDateTime,
     onToggleDateTime,
   } = meta;
-  
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  
+
   // Update row selection when selectedRows prop changes
   const internalRowSelection = useMemo<RowSelectionState>(() => {
     const selection: RowSelectionState = {};
@@ -94,7 +98,20 @@ export function DataTable<TData extends { id: string }, TValue>({
       columnFilters,
       columnVisibility,
       rowSelection: internalRowSelection,
+      pagination: {
+        pageIndex,
+        pageSize: 10,
+      },
     },
+    onPaginationChange: (updater) => {
+      if (typeof updater === 'function') {
+        const newState = updater({ pageIndex, pageSize: 10 });
+        onPageChange(newState.pageIndex);
+      } else if (updater && typeof updater.pageIndex === 'number') {
+        onPageChange(updater.pageIndex);
+      }
+    },
+    manualPagination: true,
     meta: {
       onEdit,
       onDeleteSuccess,
@@ -103,7 +120,7 @@ export function DataTable<TData extends { id: string }, TValue>({
       onToggleSelect,
       showDateTime,
       onToggleDateTime,
-    },
+    } as any,
     enableRowSelection: true,
   });
 
@@ -199,11 +216,8 @@ export function DataTable<TData extends { id: string }, TValue>({
           </Table>
         </div>
       </div>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
-        <div className="text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
+      <div className="flex flex-col sm:flex-row items-center justify-end gap-4 py-4">
+        
         <div className="flex items-center gap-2">
           <Button
             variant="outline"

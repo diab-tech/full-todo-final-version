@@ -13,3 +13,15 @@ export interface ITodo {
     createdAt: Date | null;
     updatedAt: Date | null;
 }
+
+export interface UpdateTodoData {
+    id: string;
+    title: string;
+    description?: string | null;
+    status: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
+    priority: 'High' | 'Medium' | 'Low';
+    label: 'General' | 'Work' | 'Personal' | 'Documentation' | 'Enhancement' | 'Feature' | 'Bug';
+    user_id?: string;
+    createdAt?: Date | null;
+    updatedAt?: Date | null;
+}

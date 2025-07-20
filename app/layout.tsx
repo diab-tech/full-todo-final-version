@@ -5,6 +5,9 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { ClerkProvider } from "@clerk/nextjs";
 import Nav from "@/components/Nav";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { QueryClientProvider } from "@tanstack/react-query";
+import ReactQueryProvider from "@/app/providers/react-query-client";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,7 +21,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Eldeep TODO App",
-  description: "Eldeep TODO App",
+  description:
+    "Organize your tasks easily with Eldeep TODO App. Fast, clean, and beautifully designed.",
+  keywords: ["todo", "task manager", "productivity", "eldeep"],
+  authors: [{ name: "Shabaan Diab", url: "https://github.com/diab-tech" }],
 };
 
 export default function RootLayout({
@@ -28,22 +34,30 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
-      >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <div className="min-h-screen flex flex-col">
-            <Nav/>
-            <main className="flex-1 container mx-auto px-4 py-6 md:px-6 lg:px-8 max-w-7xl">
-              {children}
-            </main>
-          </div>
-        </ThemeProvider>
-        <ToastProvider/>
-      </body>
-    </html>
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
+        >
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="min-h-screen flex flex-col">
+              <Nav />
+              <main className="flex-1 container mx-auto px-4 py-6 md:px-6 lg:px-8 max-w-7xl">
+                <ErrorBoundary>
+                  <ReactQueryProvider>
+                    {children}
+                  </ReactQueryProvider>
+                </ErrorBoundary>
+              </main>
+            </div>
+          </ThemeProvider>
+          <ToastProvider />
+        </body>
+      </html>
     </ClerkProvider>
   );
 }
